@@ -1,68 +1,273 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Recoil tutorial: 02 - Code a simple cart 🎉
 
-## Available Scripts
+**Agenda:**
+1. Setup project
+2. Setup RecoilRoot
+3. Render product list
+4. Handle add to cart 
+5. Render cart info
 
-In the project directory, you can run:
 
-### `yarn start`
+## 1. Setup project
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- Setup a new project using [create-react-app](https://create-react-app.dev/docs/getting-started)
+- Install `recoil` package
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+```sh
+npm i --save recoil
+```
 
-### `yarn test`
+> Recoil official docs: [https://recoiljs.org/docs/introduction/getting-started](https://recoiljs.org/docs/introduction/getting-started)
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 2. Setup RecoilRoot
 
-### `yarn build`
+Edit `src/index.js` to add `RecoilRoot` component, so that you can use `recoil hooks` anywhere in your app.
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```js
+// src/index.js
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { RecoilRoot } from 'recoil';
+import App from './App';
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+ReactDOM.render(
+  <React.StrictMode>
+    <RecoilRoot>
+      <App />
+    </RecoilRoot>
+  </React.StrictMode>,
+  document.getElementById('root')
+);
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+<div style="page-break-after: always;"></div>
 
-### `yarn eject`
+## 3. Render product list
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Define a `product list state` using `atom`
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```js
+// features/cart/productState.js
+import { atom } from "recoil";
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+export const productListState = atom({
+  key: 'productList',
+  default: [
+    { id: 1, price: 150000, title: 'Áo thun nam' },
+    { id: 2, price: 250000, title: 'Áo sơ mi nữ' },
+    { id: 3, price: 300000, title: 'Áo khoắc thời trang' },
+  ],
+});
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Render `product list state` in component `ProductList`
 
-## Learn More
+```js
+// features/cart/component/ProductList.jsx
+function ProductList() {
+  const productList = useRecoilValue(productListState);
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+  return (
+    <div>
+      <h2>Product List</h2>
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+      <ul className="product-list">
+        {productList.map(product => (
+          <li key={product.id}>
+            {product.title}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
-### Code Splitting
+export default ProductList;
+```
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+<div style="page-break-after: always;"></div>
 
-### Analyzing the Bundle Size
+## 4. Handle add to cart 
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+Define cart state using `atom`
 
-### Making a Progressive Web App
+```js
+// features/cart/cartState.js
+import { atom } from 'recoil';
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
+export const cartState = atom({
+  key: 'cart',
+  // each item in list has 3 keys: id, product and quantity
+  default: [],
+});
+```
 
-### Advanced Configuration
+Implement `addToCart()` function that take current state and newItem and return a new state.
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
+```js
+// features/cart/cartState.js
+export const addToCart = (cart, item) => {
+  const newCart = [...cart];
+  const foundIndex = cart.findIndex(x => x.id === item.id);
 
-### Deployment
+  // Increase quantity if existing
+  if (foundIndex >= 0) {
+    newCart[foundIndex] = {
+      ...cart[foundIndex],
+      quantity: cart[foundIndex].quantity + 1,
+    };
+    return newCart;
+  }
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+  // Add new item
+  newCart.push({
+    id: item.id,
+    product: item,
+    quantity: 1,
+  });
+  return newCart;
+};
+```
 
-### `yarn build` fails to minify
+<div style="page-break-after: always;"></div>
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+Add button `Add to cart` to product list
+
+```js
+// features/cart/component/ProductList.jsx
+function ProductList() {
+  const productList = useRecoilValue(productListState);
+
+  // 1. Add this handler
+  const handleAddToCart = (product) => {}
+
+  return (
+    <div>
+      <h2>Product List</h2>
+
+      <ul className="product-list">
+        {productList.map(product => (
+          <li key={product.id}>
+            {product.title}
+
+            {/* 2. ADD THIS BUTTON */}
+            <button
+              style={{ marginLeft: '1rem' }}
+              onClick={() => handleAddToCart(product)}
+            >
+              Add to cart
+          </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+Implement add to cart handler
+
+```js
+// features/cart/component/ProductList.jsx
+function ProductList() {
+  const productList = useRecoilValue(productListState);
+  const [cart, setCart] = useRecoilState(cartState); // 1. Get recoil state
+
+  const handleAddToCart = (product) => {
+    const newCart = addToCart(cart, product); // 2. Use helper to create a new state
+    setCart(newCart); // 3. Update recoil state
+  }
+  // return (...);
+}
+```
+
+<div style="page-break-after: always;"></div>
+
+## 5. Render cart info
+
+Render current cart items in `CartInfo` component
+
+```js
+// features/cart/components/CartInfo.jsx
+function CartInfo(props) {
+  const cart = useRecoilValue(cartState);
+
+  return (
+    <div>
+      <h2>Cart info:</h2>
+
+      <ul className="cart-items">
+        {cart.map(item => (
+          <li key={item.id}>{item.product.title}: {item.quantity}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+Define a `selector` that calculate `cart total` base on `cart state`
+
+```js
+// features/cart/cartState.js
+import { atom, selector } from 'recoil';
+
+export const cartState = atom({
+  key: 'cart',
+  // each item in list has 3 keys: id, product and quantity
+  default: [],
+});
+
+// NEW CODE HERE
+export const cartTotal = selector({
+  key: 'cartTotal',
+  get: ({ get }) => {
+    const cart = get(cartState);
+
+    return cart.reduce((total, item) => {
+      return total + (item.product.price * item.quantity);
+    }, 0);
+  }
+});
+```
+
+<div style="page-break-after: always;"></div>
+
+Update CartInfo component to also render cart total 
+
+```js
+function CartInfo(props) {
+  const cart = useRecoilValue(cartState);
+  const total = useRecoilValue(cartTotal); // 1. Read selector value
+
+  return (
+    <div>
+      <h2>Cart info:</h2>
+
+      <ul className="cart-items">
+        {cart.map(item => (
+          <li key={item.id}>{item.product.title}: {item.quantity}</li>
+        ))}
+      </ul>
+
+      {/* 2. Render it! Sweeeeet! 😍 */}
+      <h4>Total: {total} VND</h4>
+    </div>
+  );
+}
+
+```
+
+<br><br>
+
+Cảm ơn các bạn đã xem video của mình! <br>
+Nhớ like, share và subscribe để cho bạn bè cùng xem nhen 😉 <br>
+
+❤️ Ủng hộ mình làm videos thì đóng góp tại đây nhé: 
+- Ủng hộ tôi: https://unghotoi.com/easyfrontend 
+- MoMo/ZaloPay: 0901 309 729
+
+Kết nối với mình: 
+- 💻Kênh Easy Frontend: [https://youtube.com/easyfrontend](https://www.facebook.com/groups/easyfrontend)
+- 🎉Fan page Facebook: [https://www.facebook.com/learn.easyfrontend](https://www.facebook.com/groups/easyfrontend)
+- 📝Nhóm trao đổi Facebook: [https://www.facebook.com/groups/easyfrontend](https://www.facebook.com/groups/easyfrontend)
